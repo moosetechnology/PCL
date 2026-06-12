@@ -12,4 +12,4 @@ The [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) defines three graph
 - Sequential function chart (SFC), has elements to organize programs for sequential and parallel control processing, graphical.
 - Instruction list (IL), textual. Note: Deprecated in the third edition (2013) and removed in the fourth edition (2025).
 
-- This project aims at creating parsers for these languages
+This project contains parsers for these languages
