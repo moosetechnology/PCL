@@ -13,3 +13,6 @@ The [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) defines three graph
 - Instruction list (IL), textual. Note: Deprecated in the third edition (2013) and removed in the fourth edition (2025).
 
 This project contains parsers for these languages
+
+ST parser: There is a parser for Siemens' SCL language
+`SCLProject on: '/path/to/SCL-files/'`
