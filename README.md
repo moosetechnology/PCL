@@ -14,5 +14,9 @@ The [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) defines three graph
 
 This project contains parsers for these languages
 
+## Parsers
+
 ST parser: There is a parser for Siemens' SCL language
 `SCLProject on: '/path/to/SCL-files/'`
+
+*Note: This parser was created with the help of Claude Sonnet (4.6)*
