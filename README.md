@@ -18,8 +18,8 @@ This project contains parsers for these languages
 
 ```st
 Metacello new
-  baseline: 'FamixFortran';
-  repository: 'github://moosetechnology/Famix-Fortran';
+  baseline: 'SCLParser';
+  repository: 'github://moosetechnology/PCL';
 	onConflict: [ :ex | ex allow ];
   load.
 ```
