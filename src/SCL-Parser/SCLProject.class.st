@@ -11,7 +11,10 @@ Class {
 
 { #category : 'instance creation' }
 SCLProject class >> on: aPath [
-    ^ self new parseDirectory: aPath; yourself
+
+    ^ self new
+		parseDirectory: aPath ;
+		yourself
 ]
 
 { #category : 'accessing' }
