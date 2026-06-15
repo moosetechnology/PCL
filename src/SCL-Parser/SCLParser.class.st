@@ -47,10 +47,23 @@ SCLParser >> boolLiteral [
 
 { #category : 'grammar-expressions' }
 SCLParser >> callArgument [
-    ^ super callArgument ==> [:r |
-        (r isKindOf: Array)
-            ifTrue: [SCLCallArgument new parameter: r first; direction: r second; value: r third; yourself]
-            ifFalse: [SCLCallArgument new parameter: nil; direction: nil; value: r; yourself]]
+	"dir := (self tok: ':=') / (self tok: '=>').
+	^ (identifier , dir) optional , expression"
+
+	^ super callArgument ==> [ :r |
+		  r first
+			  ifNil: [
+					  SCLCallArgument new
+						  parameter: nil;
+						  direction: nil;
+						  value: r second;
+						  yourself ]
+			  ifNotNil: [
+					  SCLCallArgument new
+						  parameter: r first first;
+						  direction: r first second;
+						  value: r second;
+						  yourself ] ]
 ]
 
 { #category : 'grammar-expressions' }
