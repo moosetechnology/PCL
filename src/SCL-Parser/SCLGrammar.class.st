@@ -55,7 +55,10 @@ Class {
 		'functionBlock',
 		'organizationBlock',
 		'programUnit',
-		'start'
+		'start',
+		'semiColon',
+		'hexLit',
+		'localHead'
 	],
 	#category : 'SCL-Parser-Grammar',
 	#package : 'SCL-Parser',
@@ -64,35 +67,36 @@ Class {
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> addExpression [
-    | op |
-    op := (self tok: $+ asPParser) / (self tok: $- asPParser).
-    ^ mulExpression , (op , mulExpression) star
+
+	| op |
+	op := (self tok: '+') / (self tok: '-').
+	^ mulExpression , (op , mulExpression) star
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> andExpression [
-    | op |
-    op := (self keyword: 'AND') / (self tok: $& asPParser).
-    ^ compareExpression , (op , compareExpression) star
+
+	| op |
+	op := (self keyword: 'AND') / (self tok: '&').
+	^ compareExpression , (op , compareExpression) star
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> assignmentStmt [
-    ^ variableRef , (self tok: ':=' asPParser) , expression , (self tok: $; asPParser)
+
+	^ variableRef , (self tok: ':=') , expression , semiColon
 ]
 
 { #category : 'grammar-declarations' }
 SCLGrammar >> attrBlock [
-    | openB closeB semi |
-    openB := self tok: ${ asPParser.
-    closeB := self tok: $} asPParser.
-    semi := self tok: $; asPParser.
-    ^ openB , attrPair , (semi , attrPair ==> #second) star , closeB
+
+	^ (self tok: '{') , attrPair , (semiColon , attrPair) star , (self tok: '}')
 ]
 
 { #category : 'grammar-declarations' }
 SCLGrammar >> attrPair [
-    ^ identifier , (self tok: ':=' asPParser) , stringLiteral
+
+	^ identifier , (self tok: ':=') , stringLiteral
 ]
 
 { #category : 'grammar-whitespace' }
@@ -110,74 +114,77 @@ SCLGrammar >> body [
 
 { #category : 'grammar-literals' }
 SCLGrammar >> boolLiteral [
+
 	^ (self keyword: 'TRUE') / (self keyword: 'FALSE')
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> callArgument [
-    | dir named positional |
-    dir := (self tok: ':=' asPParser) / (self tok: '=>' asPParser).
-    named := identifier , dir , expression.
-    positional := expression.
-    ^ named / positional
+
+	| dir named positional |
+	dir := (self tok: ':=') / (self tok: '=>').
+	named := identifier , dir , expression.
+	positional := expression.
+	^ named / positional
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> callArguments [
-    | comma |
-    comma := self tok: $, asPParser.
-    ^ callArgument , (comma , callArgument ==> #second) star
+
+	^ callArgument , ((self tok: $,) , callArgument ==> #second) star
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> callExpression [
-    | dq rawQuotedId localHead head openP closeP |
-    dq := Character value: 34.
-    rawQuotedId := (dq asPParser , dq asPParser negate star , dq asPParser) flatten.
-    localHead := ($# asPParser , (rawQuotedId / rawIdentifier)) flatten trim: whitespace.
-    head := localHead / quotedIdentifier / identifier.
-    openP := self tok: $( asPParser.
-    closeP := self tok: $) asPParser.
-    ^ head , openP , callArguments optional , closeP
+
+	| head |
+
+	head := localHead / quotedIdentifier / identifier.
+
+	^ head , (self tok: $() , callArguments optional , (self tok: $))
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> callStatement [
-    ^ callExpression , (self tok: $; asPParser)
+
+	^ callExpression , (self tok: $;)
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> caseClause [
-    | comma colon |
-    comma := self tok: $, asPParser.
-    colon := self tok: $: asPParser.
-    ^ caseLabel , (comma , caseLabel ==> #second) star , colon , statement star
+
+	| comma colon |
+	comma := self tok: $,.
+	colon := self tok: $:.
+	^ caseLabel , (comma , caseLabel ==> #second) star , colon
+	  , statement star
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> caseLabel [
-    ^ intLiteral , (self tok: '..' asPParser) , intLiteral / intLiteral
+
+	^ intLiteral , (self tok: '..') , intLiteral / intLiteral
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> caseStatement [
-    | elseColon elseClause |
-    elseColon := self tok: $: asPParser.
-    elseClause := (self keyword: 'ELSE') , elseColon optional , statement star
-        ==> [:r | r third].
-    ^ (self keyword: 'CASE') , expression , (self keyword: 'OF')
-      , caseClause star
-      , elseClause optional
-      , (self keyword: 'END_CASE') , (self tok: $; asPParser) optional
+
+	| elseColon elseClause |
+	elseColon := self tok: $:.
+	elseClause := (self keyword: 'ELSE') , elseColon optional
+	              , statement star ==> [ :r | r third ].
+	^ (self keyword: 'CASE') , expression , (self keyword: 'OF')
+	  , caseClause star , elseClause optional
+	  , (self keyword: 'END_CASE') , (self tok: $;) optional
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> compareExpression [
-    | op |
-    op := (self tok: '<>' asPParser) / (self tok: '<=' asPParser)
-          / (self tok: '>=' asPParser) / (self tok: $< asPParser)
-          / (self tok: $> asPParser) / (self tok: $= asPParser).
-    ^ addExpression , (op , addExpression) optional
+
+	| op |
+	op := (self tok: '<>') / (self tok: '<=') / (self tok: '>=')
+	      / (self tok: '<') / (self tok: $>) / (self tok: $=).
+	^ addExpression , (op , addExpression) optional
 ]
 
 { #category : 'grammar-statements' }
@@ -187,7 +194,8 @@ SCLGrammar >> elsifClause [
 
 { #category : 'grammar-statements' }
 SCLGrammar >> exitStatement [
-    ^ (self keyword: 'EXIT') , (self tok: $; asPParser)
+
+	^ (self keyword: 'EXIT') , (self tok: $;)
 ]
 
 { #category : 'grammar-expressions' }
@@ -197,20 +205,22 @@ SCLGrammar >> expression [
 
 { #category : 'grammar-statements' }
 SCLGrammar >> forStatement [
-    | assignOp |
-    assignOp := ':=' asPParser trim: whitespace.
-    ^ (self keyword: 'FOR') , variableRef , assignOp ,
-      expression , (self keyword: 'TO') , expression ,
-      ((self keyword: 'BY') , expression ==> #second) optional ,
-      (self keyword: 'DO') , statement star , (self keyword: 'END_FOR') ,
-      (self tok: $; asPParser) optional
+
+	| assignOp |
+	assignOp := ':=' asPParser trim: whitespace.
+	^ (self keyword: 'FOR') , variableRef , assignOp , expression
+	  , (self keyword: 'TO') , expression
+	  , ((self keyword: 'BY') , expression ==> #second) optional
+	  , (self keyword: 'DO') , statement star , (self keyword: 'END_FOR')
+	  , (self tok: $;) optional
 ]
 
 { #category : 'grammar-program' }
 SCLGrammar >> function [
-    ^ (self keyword: 'FUNCTION') , unitName , (self tok: $: asPParser)
-      , typeName , headerSection , varSections , body
-      , (self keyword: 'END_FUNCTION')
+
+	^ (self keyword: 'FUNCTION') , unitName , (self tok: $:) , typeName
+	  , headerSection , varSections , body
+	  , (self keyword: 'END_FUNCTION')
 ]
 
 { #category : 'grammar-program' }
@@ -234,45 +244,58 @@ SCLGrammar >> headerSection [
     ^ (attrBlock / headerMetaLine) star
 ]
 
+{ #category : 'grammar-literals' }
+SCLGrammar >> hexLit [
+
+	| hexDigit |
+
+	hexDigit := PP2PredicateObjectNode
+		            on: [ :c |
+			            c isDigit or: [
+				            c isLetter and: [ 'abcdef' includes: c asLowercase ] ] ]
+		            message: 'hex digit'.
+
+	^ (#digit asPParser plus , $# asPParser , hexDigit plus)
+		  flatten trim: whitespace
+]
+
 { #category : 'grammar-terminals' }
 SCLGrammar >> identifier [
+
 	^ rawIdentifier trim: whitespace
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> ifStatement [
-    ^ (self keyword: 'IF') , expression , (self keyword: 'THEN')
-      , statement star , elsifClause star
-      , ((self keyword: 'ELSE') , statement star ==> #second) optional
-      , (self keyword: 'END_IF') , (self tok: $; asPParser) optional
+
+	^ (self keyword: 'IF') , expression , (self keyword: 'THEN')
+	  , statement star , elsifClause star
+	  , ((self keyword: 'ELSE') , statement star ==> #second) optional
+	  , (self keyword: 'END_IF') , (self tok: $;) optional
 ]
 
 { #category : 'grammar-literals' }
 SCLGrammar >> intLiteral [
-    | hexDigit hexLit decLit typedLit hashChar letterChar |
-    hashChar := Character value: 35.
-    hexDigit := PP2PredicateObjectNode
-        on: [:c | c isDigit or: [c isLetter and: ['abcdef' includes: c asLowercase]]]
-        message: 'hex digit'.
-    letterChar := PP2PredicateObjectNode
-        on: [:c | c isLetter]
-        message: 'letter'.
-    typedLit := (letterChar plus , hashChar asPParser , #digit asPParser plus ,
-        hashChar asPParser , (PP2PredicateObjectNode
-            on: [:c | c isAlphaNumeric]
-            message: 'alphanum') plus)
-        flatten trim: whitespace.
-    hexLit := (#digit asPParser plus , hashChar asPParser , hexDigit plus)
-        flatten trim: whitespace.
-    decLit := #digit asPParser plus flatten trim: whitespace.
-    ^ typedLit / hexLit / decLit
+
+	| decLit typedLit letterChar |
+
+	letterChar := PP2PredicateObjectNode
+		on: [ :c | c isLetter ]
+		message: 'letter'.
+	typedLit := (letterChar plus , $# asPParser ,
+		#digit asPParser plus , $# asPParser ,
+		(PP2PredicateObjectNode
+			on: [ :c | c isAlphaNumeric ]
+			message: 'alphanum') plus) flatten trim: whitespace.
+
+	decLit := #digit asPParser plus flatten trim: whitespace.
+
+	^ typedLit / hexLit / decLit
 ]
 
 { #category : 'parsing' }
 SCLGrammar >> keyword: aString [
-	^ (aString asPParser , (PP2PredicateObjectNode
-		on: [:c | c isAlphaNumeric or: [c = $_]]
-		message: 'word char') negate and) flatten trim: whitespace
+	^ aString asPParser flatten trim: whitespace 
 ]
 
 { #category : 'parsing' }
@@ -301,10 +324,22 @@ SCLGrammar >> lineComment [
 ]
 
 { #category : 'grammar-expressions' }
+SCLGrammar >> localHead [
+
+	| dq rawQuotedId |
+	dq := $" asPParser.
+	rawQuotedId := (dq , dq negate star , dq) flatten.
+
+	^ ($# asPParser , (rawQuotedId / rawIdentifier)) flatten
+		             trim: whitespace.
+]
+
+{ #category : 'grammar-expressions' }
 SCLGrammar >> mulExpression [
-    | op |
-    op := (self tok: $* asPParser) / (self tok: $/ asPParser) / (self keyword: 'MOD').
-    ^ powerExpression , (op , powerExpression) star
+
+	| op |
+	op := (self tok: '*') / (self tok: '/') / (self keyword: 'MOD').
+	^ powerExpression , (op , powerExpression) star
 ]
 
 { #category : 'grammar-expressions' }
@@ -322,19 +357,21 @@ SCLGrammar >> organizationBlock [
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> powerExpression [
-    | op |
-    op := self tok: '**' asPParser.
-    ^ unaryExpression , (op , unaryExpression) optional
+
+	| op |
+	op := self tok: '**'.
+	^ unaryExpression , (op , unaryExpression) optional
 ]
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> primary [
-    | openP closeP parenExpr |
-    openP := self tok: $( asPParser.
-    closeP := self tok: $) asPParser.
-    parenExpr := openP , expression , closeP.
-    ^ parenExpr / boolLiteral / timeLiteral / realLiteral / intLiteral / stringLiteral
-        / callExpression / variableRef
+
+	| openP closeP parenExpr |
+	openP := self tok: $(.
+	closeP := self tok: $).
+	parenExpr := openP , expression , closeP.
+	^ parenExpr / boolLiteral / timeLiteral / realLiteral / intLiteral
+	  / stringLiteral / callExpression / variableRef
 ]
 
 { #category : 'grammar-program' }
@@ -352,12 +389,13 @@ SCLGrammar >> quotedIdentifier [
 
 { #category : 'grammar-terminals' }
 SCLGrammar >> rawIdentifier [
+
 	^ ((PP2PredicateObjectNode
-		on: [:c | c isLetter or: [c = $_]]
-		message: 'letter or underscore') ,
+		    on: [ :c | c isLetter or: [ c = $_ ] ]
+		    message: 'letter or underscore') ,
 		(PP2PredicateObjectNode
-			on: [:c | c isAlphaNumeric or: [c = $_]]
-			message: 'alphanumeric or underscore') star) flatten
+		    on: [ :c | c isAlphaNumeric or: [ c = $_ ] ]
+		    message: 'alphanumeric or underscore') star) flatten
 ]
 
 { #category : 'grammar-literals' }
@@ -371,14 +409,22 @@ SCLGrammar >> realLiteral [
 
 { #category : 'grammar-statements' }
 SCLGrammar >> repeatStatement [
-    ^ (self keyword: 'REPEAT') , statement star , (self keyword: 'UNTIL')
-      , expression , (self keyword: 'END_REPEAT')
-      , (self tok: $; asPParser) optional
+
+	^ (self keyword: 'REPEAT') , statement star , (self keyword: 'UNTIL')
+	  , expression , (self keyword: 'END_REPEAT')
+	  , (self tok: $;) optional
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> returnStatement [
-    ^ (self keyword: 'RETURN') , (self tok: $; asPParser)
+
+	^ (self keyword: 'RETURN') , (self tok: $;)
+]
+
+{ #category : 'grammar-terminals' }
+SCLGrammar >> semiColon [
+
+	^self tok: ';'
 ]
 
 { #category : 'grammar-program' }
@@ -389,18 +435,19 @@ SCLGrammar >> start [
 
 { #category : 'grammar-statements' }
 SCLGrammar >> statement [
-    | emptyStmt regionStmt nonNewline |
-    emptyStmt := (self tok: $; asPParser) ==> [:_ | nil].
-    nonNewline := PP2PredicateObjectNode
-        on: [:c | (c = Character lf) not and: [(c = Character cr) not]]
-        message: 'non-newline'.
-    regionStmt := (self keyword: 'REGION') , nonNewline star ,
-        statement star , (self keyword: 'END_REGION') ,
-        (self tok: $; asPParser) optional
-        ==> [:_ | nil].
-    ^ ifStatement / forStatement / whileStatement / repeatStatement /
-      caseStatement / returnStatement / exitStatement / callStatement / assignmentStmt /
-      regionStmt / emptyStmt
+
+	| emptyStmt regionStmt nonNewline |
+	emptyStmt := (self tok: $;) ==> [ :_ | nil ].
+	nonNewline := PP2PredicateObjectNode
+		              on: [ :c |
+		              (c = Character lf) not and: [ (c = Character cr) not ] ]
+		              message: 'non-newline'.
+	regionStmt := (self keyword: 'REGION') , nonNewline star
+	              , statement star , (self keyword: 'END_REGION')
+	              , (self tok: $;) optional ==> [ :_ | nil ].
+	^ ifStatement / forStatement / whileStatement / repeatStatement
+	  / caseStatement / returnStatement / exitStatement / callStatement
+	  / assignmentStmt / regionStmt / emptyStmt
 ]
 
 { #category : 'grammar-literals' }
@@ -419,20 +466,23 @@ SCLGrammar >> timeLiteral [
 ]
 
 { #category : 'parsing' }
-SCLGrammar >> tok: aParser [
-	^ aParser trim: whitespace
+SCLGrammar >> tok: anObject [
+
+	^ anObject asPParser trim: whitespace
 ]
 
 { #category : 'grammar-declarations' }
 SCLGrammar >> typeName [
-    | simpleType arrayType structType dot2 |
-    simpleType := quotedIdentifier / identifier.
-    dot2 := '..' asPParser trim: whitespace.
-    arrayType := (self keywordCI: 'ARRAY') , (self tok: $[ asPParser) ,
-        expression , dot2 , expression ,
-        (self tok: $] asPParser) , (self keywordCI: 'OF') , typeName.
-    structType := (self keywordCI: 'Struct') , varDecl star , (self keywordCI: 'End_Struct').
-    ^ arrayType / structType / simpleType
+
+	| simpleType arrayType structType dot2 |
+	simpleType := quotedIdentifier / identifier.
+	dot2 := '..' asPParser trim: whitespace.
+	arrayType := (self keywordCI: 'ARRAY') , (self tok: $[) , expression
+	             , dot2 , expression , (self tok: $])
+	             , (self keywordCI: 'OF') , typeName.
+	structType := (self keywordCI: 'Struct') , varDecl star
+	              , (self keywordCI: 'End_Struct').
+	^ arrayType / structType / simpleType
 ]
 
 { #category : 'grammar-expressions' }
@@ -450,18 +500,20 @@ SCLGrammar >> unitName [
 
 { #category : 'grammar-declarations' }
 SCLGrammar >> varDecl [
-    | name localHead atAlias assignOp anyChar rawInit defaultVal |
-    localHead := ($# asPParser , rawIdentifier) flatten trim: whitespace.
-    name := quotedIdentifier / localHead / identifier.
-    atAlias := (self keyword: 'AT') , name.
-    assignOp := self tok: ':=' asPParser.
-    anyChar := PP2PredicateObjectNode
-        on: [:c | c ~= $;]
-        message: 'non-semicolon'.
-    rawInit := anyChar plus flatten trim: whitespace.
-    defaultVal := (assignOp , (expression / rawInit) ==> #second) optional.
-    ^ name , atAlias optional , attrBlock optional , (self tok: $: asPParser) ,
-      typeName , defaultVal , (self tok: $; asPParser)
+
+	| name localHead atAlias assignOp anyChar rawInit defaultVal |
+	localHead := ($# asPParser , rawIdentifier) flatten trim: whitespace.
+	name := quotedIdentifier / localHead / identifier.
+	atAlias := (self keyword: 'AT') , name.
+	assignOp := self tok: ':='.
+	anyChar := PP2PredicateObjectNode
+		           on: [ :c | c ~= $; ]
+		           message: 'non-semicolon'.
+	rawInit := anyChar plus flatten trim: whitespace.
+	defaultVal := (assignOp , (expression / rawInit) ==> #second)
+		              optional.
+	^ name , atAlias optional , attrBlock optional , (self tok: $:)
+	  , typeName , defaultVal , (self tok: $;)
 ]
 
 { #category : 'grammar-declarations' }
@@ -485,27 +537,29 @@ SCLGrammar >> varSections [
 
 { #category : 'grammar-expressions' }
 SCLGrammar >> variableRef [
-    | dq rawQuotedId localHead percentAccess memberAccess subscriptAccess accessor |
-    dq := Character value: 34.
-    rawQuotedId := (dq asPParser , dq asPParser negate star , dq asPParser) flatten.
-    localHead := ($# asPParser , (rawQuotedId / rawIdentifier)) flatten trim: whitespace.
-    percentAccess := ($% asPParser , rawIdentifier) flatten trim: whitespace.
-    memberAccess := (self tok: $. asPParser) ,
-        (localHead / quotedIdentifier / percentAccess / (rawIdentifier trim: whitespace))
-        ==> #second.
-    subscriptAccess := (self tok: $[ asPParser) ,
-        expression , ((self tok: $, asPParser) , expression ==> #second) star ,
-        (self tok: $] asPParser)
-        ==> [:r | Array with: r second withAll: r third].
-    accessor := memberAccess / subscriptAccess.
-    ^ (localHead / quotedIdentifier / identifier) , accessor star
+
+	| percentAccess memberAccess subscriptAccess accessor |
+
+	percentAccess := ($% asPParser , rawIdentifier) flatten trim:
+		                 whitespace.
+	memberAccess := (self tok: $.)
+	                , (localHead / quotedIdentifier / percentAccess
+		                 / (rawIdentifier trim: whitespace)) ==> #second.
+	subscriptAccess := (self tok: $[) , expression
+	                   , ((self tok: $,) , expression ==> #second) star
+	                   , (self tok: $])
+	                   ==> [ :r | Array with: r second withAll: r third ].
+	accessor := memberAccess / subscriptAccess.
+
+	^ localHead / quotedIdentifier / identifier , accessor star
 ]
 
 { #category : 'grammar-statements' }
 SCLGrammar >> whileStatement [
-    ^ (self keyword: 'WHILE') , expression , (self keyword: 'DO')
-      , statement star , (self keyword: 'END_WHILE')
-      , (self tok: $; asPParser) optional
+
+	^ (self keyword: 'WHILE') , expression , (self keyword: 'DO')
+	  , statement star , (self keyword: 'END_WHILE')
+	  , (self tok: $;) optional
 ]
 
 { #category : 'grammar-whitespace' }

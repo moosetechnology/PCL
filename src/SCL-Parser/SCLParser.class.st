@@ -12,9 +12,10 @@ Class {
 
 { #category : 'grammar-expressions' }
 SCLParser >> addExpression [
-    ^ super addExpression ==> [:r |
-        r second inject: r first into: [:acc :each |
-            SCLBinaryOp new operator: each first; left: acc; right: each second; yourself]]
+
+	^super addExpression ==> [:r |
+		r second inject: r first into: [:acc :each |
+			SCLBinaryOp new operator: each first; left: acc; right: each second; yourself]]
 ]
 
 { #category : 'grammar-expressions' }
