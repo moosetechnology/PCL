@@ -14,6 +14,16 @@ The [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) defines three graph
 
 This project contains parsers for these languages
 
+## Loading
+
+```st
+Metacello new
+  baseline: 'FamixFortran';
+  repository: 'github://moosetechnology/Famix-Fortran';
+	onConflict: [ :ex | ex allow ];
+  load.
+```
+
 ## Parsers
 
 ST parser: There is a parser for Siemens' SCL language
